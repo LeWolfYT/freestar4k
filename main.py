@@ -1017,7 +1017,10 @@ def getdata():
                         normp = float(rs)
                     if ix == 3:
                         break
-            rs = float(rs)
+            try:
+                rs = float(rs)
+            except (ValueError, TypeError):
+                rs = 0.0
             dev1 = (abs(ts/normt) > 0.15)
             dev2 = (abs(rs/normp) > 0.15)
             
