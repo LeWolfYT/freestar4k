@@ -19,6 +19,7 @@ lfmusic = False
 lsort = False
 smoothscale = False
 efullscreen = False
+timezone_offset = None
 
 pg.display.init()
 pg.font.init()
@@ -758,6 +759,7 @@ def getdata():
     global clidata
     global alertdata
     global mainicon, ldllficon
+    global timezone_offset
     global radardata
     global aldata
     global leds
@@ -824,6 +826,22 @@ def getdata():
             alertdata = az
             
             lat, long = wxdata["current"]["info"]["geocode"]
+
+            try:
+                tz_response = r.get(
+                    "https://timeapi.io/api/TimeZone/coordinate",
+                    params={"latitude": lat, "longitude": long},
+                    timeout=10
+                )
+                tz_response.raise_for_status()
+                tz_data = tz_response.json()
+
+                timezone_offset = tz_data["currentUtcOffset"]["seconds"]
+
+            except Exception as e:
+                print("uh oh time zone finding went wrong. error:", e)
+                timezone_offset = None
+            
             x, y = mapper((rmappoint1, rmappoint2), lat, long)
             regmappos = (x, y)
             x = max(x, 0)
@@ -908,7 +926,7 @@ def getdata():
                 leds[1] = True
             except:
                 print(tb.format_exc())
-        print("gre")
+        print("gre") # i'm sure this stands for something, but idk what. so ima just leave it there and question, what is it and why?
         def get_regloc(l):
             global leds
             try:
@@ -942,12 +960,21 @@ def getdata():
         try:
             report = r.get(f"https://mesonet.agron.iastate.edu/cgi-bin/afos/retrieve.py?&pil={afos_climate}&center=&limit=1&sdate=&edate=&ttaaii=&order=desc").text
 
-            rline = report[report.index("MONTH TO DATE"):].split("\n")[0]
-            
+            rline = (
+                report[report.index("MONTH TO DATE"):].split("\n")[0]
+                if "MONTH TO DATE" in report else ""
+            )
+
             #get outlook data
-            templine = report[report.index("DEGREE DAYS"):]
-            templine = templine[templine.index("MONTH TO DATE"):].split("\n")[0]
-            
+            templine = (
+                report[report.index("DEGREE DAYS"):]
+                if "DEGREE DAYS" in report else ""
+            )
+            templine = (
+                templine[templine.index("MONTH TO DATE"):].split("\n")[0]
+                if "MONTH TO DATE" in templine else ""
+            )
+
             for section in rline.split(" "):
                 if section.strip() == "":
                     continue
@@ -958,40 +985,58 @@ def getdata():
                 else:
                     break
             
-            ix = 0
-            for ts in templine.split(" "):
-                if ts.strip() == "":
-                    continue
+            normt = None
+            normp = None
+            ts = None
+            rs = None
+
+            numbers = []
+
+            for value in templine.split():
                 try:
-                    float(ts)
-                except:
-                    pass
-                else:
-                    ix += 1
-                    if ix == 2:
-                        normt = float(ts)
-                    if ix == 3:
-                        break
-            ts = float(ts)
-            ix = 0
-            for rs in rline.split(" "):
-                if rs.strip() == "":
+                    numbers.append(float(value))
+                except ValueError:
                     continue
+
+            if len(numbers) >= 2:
+                normt = numbers[1]
+
+            if len(numbers) >= 3:
+                ts = numbers[2]
+
+            numbers = []
+
+            for value in rline.split():
                 try:
-                    float(rs)
-                except:
-                    pass
-                else:
-                    ix += 1
-                    if ix == 2:
-                        normp = float(rs)
-                    if ix == 3:
-                        break
-            rs = float(rs)
-            dev1 = (abs(ts/normt) > 0.15)
-            dev2 = (abs(rs/normp) > 0.15)
+                    numbers.append(float(value))
+                except ValueError:
+                    continue
+
+            if len(numbers) >= 2:
+                normp = numbers[1]
+
+            if len(numbers) >= 3:
+                rs = numbers[2]
+            try:
+                rs = float(rs)
+            except (ValueError, TypeError):
+                rs = 0.0
+            dev1 = (
+                abs(ts / normt) > 0.15
+                if ts is not None and normt not in (None, 0)
+                else False
+            )
+            dev2 = (
+                abs(rs / normp) > 0.15
+                if rs is not None and normp not in (None, 0)
+                else False
+            )
             
-            clidata = {"month_precip": section, "temp_outlook": dev1*sign(ts), "precip_outlook": dev2*sign(rs)}
+            clidata = {
+                "month_precip": section,
+                "temp_outlook": dev1 * sign(ts) if ts is not None else 0,
+                "precip_outlook": dev2 * sign(rs) if rs is not None else 0
+            }
             datagot = True
             leds[1] = True
         except:
@@ -2837,7 +2882,11 @@ while working:
             drawshadow(startitlefont, "of Awesomeness", 181, 54+ldl_y, 3, color=yeller, mono=15.5, ofw=1.07, bs=True)
             drawshadow(starfont32, "       No Report Available", 80, 109+linespacing*2.5+ldl_y, 3, mono=gmono)
     
-    nn = dt.datetime.now()
+    nn = (
+        dt.datetime.now(dt.timezone(dt.timedelta(seconds=timezone_offset)))
+        if timezone_offset is not None
+        else dt.datetime.now()
+    )
     al1 = False
     if not alerting:
         al1 = True
