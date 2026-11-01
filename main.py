@@ -985,46 +985,58 @@ def getdata():
                 else:
                     break
             
-            ix = 0
-            for ts in templine.split(" "):
-                if ts.strip() == "":
-                    continue
+            normt = None
+            normp = None
+            ts = None
+            rs = None
+
+            numbers = []
+
+            for value in templine.split():
                 try:
-                    float(ts)
-                except:
-                    pass
-                else:
-                    ix += 1
-                    if ix == 2:
-                        normt = float(ts)
-                    if ix == 3:
-                        break
-            try:
-                ts = float(ts)
-            except (ValueError, TypeError):
-                ts = 0.0
-            ix = 0
-            for rs in rline.split(" "):
-                if rs.strip() == "":
+                    numbers.append(float(value))
+                except ValueError:
                     continue
+
+            if len(numbers) >= 2:
+                normt = numbers[1]
+
+            if len(numbers) >= 3:
+                ts = numbers[2]
+
+            numbers = []
+
+            for value in rline.split():
                 try:
-                    float(rs)
-                except:
-                    pass
-                else:
-                    ix += 1
-                    if ix == 2:
-                        normp = float(rs)
-                    if ix == 3:
-                        break
+                    numbers.append(float(value))
+                except ValueError:
+                    continue
+
+            if len(numbers) >= 2:
+                normp = numbers[1]
+
+            if len(numbers) >= 3:
+                rs = numbers[2]
             try:
                 rs = float(rs)
             except (ValueError, TypeError):
                 rs = 0.0
-            dev1 = (abs(ts/normt) > 0.15)
-            dev2 = (abs(rs/normp) > 0.15)
+            dev1 = (
+                abs(ts / normt) > 0.15
+                if ts is not None and normt not in (None, 0)
+                else False
+            )
+            dev2 = (
+                abs(rs / normp) > 0.15
+                if rs is not None and normp not in (None, 0)
+                else False
+            )
             
-            clidata = {"month_precip": section, "temp_outlook": dev1*sign(ts), "precip_outlook": dev2*sign(rs)}
+            clidata = {
+                "month_precip": section,
+                "temp_outlook": dev1 * sign(ts) if ts is not None else 0,
+                "precip_outlook": dev2 * sign(rs) if rs is not None else 0
+            }
             datagot = True
             leds[1] = True
         except:
