@@ -19,6 +19,7 @@ lfmusic = False
 lsort = False
 smoothscale = False
 efullscreen = False
+timezone_offset = None
 
 pg.display.init()
 pg.font.init()
@@ -824,6 +825,22 @@ def getdata():
             alertdata = az
             
             lat, long = wxdata["current"]["info"]["geocode"]
+
+            try:
+                tz_response = r.get(
+                    "https://timeapi.io/api/TimeZone/coordinate",
+                    params={"latitude": lat, "longitude": long},
+                    timeout=10
+                )
+                tz_response.raise_for_status()
+                tz_data = tz_response.json()
+
+                timezone_offset = tz_data["currentUtcOffset"]["seconds"]
+
+            except Exception as e:
+                print("uh oh time zone finding went wrong. error:", e)
+                timezone_offset = None
+            
             x, y = mapper((rmappoint1, rmappoint2), lat, long)
             regmappos = (x, y)
             x = max(x, 0)
@@ -2114,7 +2131,7 @@ while working:
     if not ldlmode:
         colorbug_started = True
     if schedule:
-        mn = int(dt.datetime.now().strftime("%M"))
+        mn = int(dt.datetime.now(dt.timezone(dt.timedelta(seconds=timezone_offset))).strftime("%M"))
         if mn not in schedule:
             fired = False
         if not fired and mn in schedule:
@@ -2837,7 +2854,7 @@ while working:
             drawshadow(startitlefont, "of Awesomeness", 181, 54+ldl_y, 3, color=yeller, mono=15.5, ofw=1.07, bs=True)
             drawshadow(starfont32, "       No Report Available", 80, 109+linespacing*2.5+ldl_y, 3, mono=gmono)
     
-    nn = dt.datetime.now()
+    nn = dt.datetime.now(dt.timezone(dt.timedelta(seconds=timezone_offset)))
     al1 = False
     if not alerting:
         al1 = True
