@@ -960,12 +960,21 @@ def getdata():
         try:
             report = r.get(f"https://mesonet.agron.iastate.edu/cgi-bin/afos/retrieve.py?&pil={afos_climate}&center=&limit=1&sdate=&edate=&ttaaii=&order=desc").text
 
-            rline = report[report.index("MONTH TO DATE"):].split("\n")[0]
-            
+            rline = (
+                report[report.index("MONTH TO DATE"):].split("\n")[0]
+                if "MONTH TO DATE" in report else ""
+            )
+
             #get outlook data
-            templine = report[report.index("DEGREE DAYS"):]
-            templine = templine[templine.index("MONTH TO DATE"):].split("\n")[0]
-            
+            templine = (
+                report[report.index("DEGREE DAYS"):]
+                if "DEGREE DAYS" in report else ""
+            )
+            templine = (
+                templine[templine.index("MONTH TO DATE"):].split("\n")[0]
+                if "MONTH TO DATE" in templine else ""
+            )
+
             for section in rline.split(" "):
                 if section.strip() == "":
                     continue
