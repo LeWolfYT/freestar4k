@@ -759,6 +759,7 @@ def getdata():
     global clidata
     global alertdata
     global mainicon, ldllficon
+    global timezone_offset
     global radardata
     global aldata
     global leds
