@@ -999,7 +999,10 @@ def getdata():
                         normt = float(ts)
                     if ix == 3:
                         break
-            ts = float(ts)
+            try:
+                ts = float(ts)
+            except (ValueError, TypeError):
+                ts = 0.0
             ix = 0
             for rs in rline.split(" "):
                 if rs.strip() == "":
