@@ -2132,7 +2132,7 @@ while working:
     if not ldlmode:
         colorbug_started = True
     if schedule:
-        mn = int(dt.datetime.now(dt.timezone(dt.timedelta(seconds=timezone_offset))).strftime("%M"))
+        mn = int(dt.datetime.now().strftime("%M"))
         if mn not in schedule:
             fired = False
         if not fired and mn in schedule:
