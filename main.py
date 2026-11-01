@@ -926,7 +926,7 @@ def getdata():
                 leds[1] = True
             except:
                 print(tb.format_exc())
-        print("gre")
+        print("gre") # i'm sure this stands for something, but idk what. so ima just leave it there and question, what is it and why?
         def get_regloc(l):
             global leds
             try:
