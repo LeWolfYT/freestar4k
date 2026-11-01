@@ -2855,7 +2855,11 @@ while working:
             drawshadow(startitlefont, "of Awesomeness", 181, 54+ldl_y, 3, color=yeller, mono=15.5, ofw=1.07, bs=True)
             drawshadow(starfont32, "       No Report Available", 80, 109+linespacing*2.5+ldl_y, 3, mono=gmono)
     
-    nn = dt.datetime.now(dt.timezone(dt.timedelta(seconds=timezone_offset)))
+    nn = (
+        dt.datetime.now(dt.timezone(dt.timedelta(seconds=timezone_offset)))
+        if timezone_offset is not None
+        else dt.datetime.now()
+    )
     al1 = False
     if not alerting:
         al1 = True
